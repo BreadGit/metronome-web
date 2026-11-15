@@ -224,6 +224,41 @@ test("starts and stops with space while the volume has focus", async ({ page }) 
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
 });
 
+test("stays silent after muting while stopped and restarting", async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeGainNode = window.GainNode;
+    const peaks: number[] = [];
+    Object.assign(window, { gainPeaks: peaks });
+    window.GainNode = class extends NativeGainNode {
+      constructor(context: BaseAudioContext, options?: GainOptions) {
+        super(context, options);
+        const analyser = new AnalyserNode(context, { fftSize: 2048 });
+        this.connect(analyser);
+        const samples = new Float32Array(analyser.fftSize);
+        setInterval(() => {
+          analyser.getFloatTimeDomainData(samples);
+          peaks.push(Math.max(...samples.map(Math.abs)));
+        }, 5);
+      }
+    };
+  });
+  await page.reload();
+  await volumeSlider(page).fill("100");
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page.locator(".beat.lit")).toHaveCount(1, { timeout: 3000 });
+  await page.getByRole("button", { name: "Stop" }).click();
+  await page.getByRole("button", { name: "Mute", exact: true }).click();
+  await page.evaluate(() => (window as unknown as { gainPeaks: number[] }).gainPeaks.splice(0));
+
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page.locator(".beat.lit")).toHaveCount(1, { timeout: 3000 });
+  await page.waitForTimeout(200);
+  const peak = await page.evaluate(() =>
+    Math.max(...(window as unknown as { gainPeaks: number[] }).gainPeaks),
+  );
+  expect(peak).toBe(0);
+});
+
 test("keeps settings across reloads", async ({ page }) => {
   await page.getByRole("button", { name: "Increase tempo" }).click();
   await page.getByRole("group", { name: "Beats" }).getByRole("radio", { name: "6" }).check();

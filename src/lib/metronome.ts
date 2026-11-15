@@ -55,7 +55,12 @@ export class Metronome {
     this.#config = config;
     if (!this.#audio) return;
     const { context, output } = this.#audio;
-    output.gain.setTargetAtTime(this.#gain(), context.currentTime, VOLUME_SMOOTHING_S);
+    if (this.#running && context.state === "running") {
+      output.gain.setTargetAtTime(this.#gain(), context.currentTime, VOLUME_SMOOTHING_S);
+    } else {
+      output.gain.cancelScheduledValues(0);
+      output.gain.setValueAtTime(this.#gain(), context.currentTime);
+    }
   }
 
   async start(): Promise<void> {
