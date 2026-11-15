@@ -46,7 +46,6 @@
     </button>
   {/each}
 </div>
-<p class="hint">Select a beat to mute it</p>
 
 <style>
   .beats {
@@ -96,12 +95,5 @@
   .lit.silent .dot {
     border-color: var(--muted);
     background: transparent;
-  }
-
-  .hint {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.8125rem;
-    text-align: center;
   }
 </style>

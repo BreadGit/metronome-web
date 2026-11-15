@@ -27,6 +27,11 @@ export function clampTempo(tempo: number): number {
   return clamp(Math.round(tempo), TEMPO.min, TEMPO.max);
 }
 
+export function cycle(value: number, delta: number, range: { min: number; max: number }): number {
+  const size = range.max - range.min + 1;
+  return range.min + ((((value - range.min + delta) % size) + size) % size);
+}
+
 export function tempoMarking(tempo: number): string {
   return MARKINGS.find(([minTempo]) => tempo >= minTempo)?.[1] ?? "Largo";
 }

@@ -28,6 +28,18 @@ describe("shortcutFor", () => {
     expect(shortcutFor(key("T"))).toEqual({ kind: "tap" });
   });
 
+  it("maps B and S to beats and subdivisions, stepping back with shift", () => {
+    expect(shortcutFor(key("b"))).toEqual({ kind: "beats", delta: 1 });
+    expect(shortcutFor(key("B", { shiftKey: true }))).toEqual({ kind: "beats", delta: -1 });
+    expect(shortcutFor(key("s"))).toEqual({ kind: "subdivisions", delta: 1 });
+    expect(shortcutFor(key("S", { shiftKey: true }))).toEqual({ kind: "subdivisions", delta: -1 });
+  });
+
+  it("maps digits to typing a tempo", () => {
+    expect(shortcutFor(key("0"))).toEqual({ kind: "typeTempo" });
+    expect(shortcutFor(key("9"))).toEqual({ kind: "typeTempo" });
+  });
+
   it("ignores other keys and browser modifier combinations", () => {
     expect(shortcutFor(key("x"))).toBeNull();
     expect(shortcutFor(key("t", { ctrlKey: true }))).toBeNull();
@@ -42,45 +54,48 @@ describe("isHandledNatively", () => {
     return document.body.querySelector("[data-target]") ?? document.body;
   }
 
-  it("leaves space to focused controls", () => {
+  it("uses space as a shortcut on every control and text field", () => {
     for (const html of [
-      "<button data-target>Settings</button>",
+      "",
+      "<p data-target>Text</p>",
+      "<button data-target>Tap</button>",
       "<a href='#' data-target>Link</a>",
-      "<input type='checkbox' data-target>",
       "<input type='radio' data-target>",
       "<input type='range' data-target>",
-      "<input type='number' data-target>",
+      "<input type='text' data-target>",
       "<select data-target></select>",
-      "<textarea data-target></textarea>",
     ]) {
-      expect(isHandledNatively(element(html), " "), html).toBe(true);
+      expect(isHandledNatively(element(html), " "), html).toBe(false);
     }
-  });
-
-  it("uses space as a shortcut on the body and non-interactive elements", () => {
-    expect(isHandledNatively(element(""), " ")).toBe(false);
-    expect(isHandledNatively(element("<p data-target>Text</p>"), " ")).toBe(false);
     expect(isHandledNatively(null, " ")).toBe(false);
   });
 
   it("leaves arrows to range, radio and text inputs and uses them as shortcuts elsewhere", () => {
     expect(isHandledNatively(element("<input type='range' data-target>"), "ArrowUp")).toBe(true);
     expect(isHandledNatively(element("<input type='radio' data-target>"), "ArrowLeft")).toBe(true);
-    expect(isHandledNatively(element("<input type='number' data-target>"), "ArrowUp")).toBe(true);
+    expect(isHandledNatively(element("<input type='text' data-target>"), "ArrowUp")).toBe(true);
     expect(isHandledNatively(element("<button data-target>Tap</button>"), "ArrowUp")).toBe(false);
     expect(isHandledNatively(element(""), "ArrowDown")).toBe(false);
   });
 
-  it("uses T as a shortcut on buttons but not in text inputs", () => {
-    expect(isHandledNatively(element("<button data-target>Tap</button>"), "t")).toBe(false);
-    expect(isHandledNatively(element("<input type='radio' data-target>"), "t")).toBe(false);
-    expect(isHandledNatively(element("<input type='text' data-target>"), "t")).toBe(true);
+  it("uses letters and digits as shortcuts on controls but not in text inputs", () => {
+    for (const key of ["t", "b", "1"]) {
+      expect(isHandledNatively(element("<button data-target>Tap</button>"), key)).toBe(false);
+      expect(isHandledNatively(element("<input type='radio' data-target>"), key)).toBe(false);
+      expect(isHandledNatively(element("<input type='range' data-target>"), key)).toBe(false);
+      expect(isHandledNatively(element("<input type='text' data-target>"), key)).toBe(true);
+    }
   });
 
-  it("leaves every key to dialogs", () => {
-    const text = element("<dialog open><p data-target>Text</p></dialog>");
-    expect(isHandledNatively(text, " ")).toBe(true);
-    expect(isHandledNatively(text, "ArrowUp")).toBe(true);
-    expect(isHandledNatively(text, "t")).toBe(true);
+  it("leaves every key to an open dialog, wherever focus is", () => {
+    for (const html of [
+      "<dialog open><p data-target>Text</p></dialog>",
+      "<dialog open></dialog><button data-target>Tap</button>",
+    ]) {
+      for (const key of [" ", "ArrowUp", "t", "1"]) {
+        expect(isHandledNatively(element(html), key), `${html} ${key}`).toBe(true);
+      }
+    }
+    expect(isHandledNatively(element("<dialog><p data-target>Text</p></dialog>"), " ")).toBe(false);
   });
 });

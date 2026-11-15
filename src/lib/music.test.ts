@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   advancePosition,
+  BEATS,
   clampTempo,
+  cycle,
   normalizePosition,
+  SUBDIVISIONS,
   tempoMarking,
   tickInterval,
   tickType,
@@ -38,6 +41,17 @@ describe("clampTempo", () => {
     expect(clampTempo(300)).toBe(252);
     expect(clampTempo(Infinity)).toBe(252);
     expect(clampTempo(120.6)).toBe(121);
+  });
+});
+
+describe("cycle", () => {
+  it("steps within the range and wraps at both ends", () => {
+    expect(cycle(4, 1, BEATS)).toBe(5);
+    expect(cycle(8, 1, BEATS)).toBe(1);
+    expect(cycle(1, -1, BEATS)).toBe(8);
+    expect(cycle(4, -1, SUBDIVISIONS)).toBe(3);
+    expect(cycle(4, 1, SUBDIVISIONS)).toBe(1);
+    expect(cycle(1, -1, SUBDIVISIONS)).toBe(4);
   });
 });
 

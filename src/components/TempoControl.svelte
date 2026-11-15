@@ -1,5 +1,6 @@
 <script lang="ts">
   import { clampTempo, TEMPO, tempoMarking } from "../lib/music";
+  import { MAX_TEMPO_DIGITS, parseTempo, tempoDigits } from "../lib/tempoEntry";
 
   interface Props {
     tempo: number;
@@ -7,10 +8,35 @@
 
   let { tempo = $bindable() }: Props = $props();
 
-  function commit(event: Event & { currentTarget: HTMLInputElement }) {
-    const typed = event.currentTarget.valueAsNumber;
-    if (Number.isFinite(typed)) tempo = clampTempo(typed);
-    event.currentTarget.value = String(tempo);
+  let input: HTMLInputElement;
+  let draft = $state<string | null>(null);
+  const shown = $derived(draft ?? String(tempo));
+  const pending = $derived(draft !== null && draft !== String(tempo));
+
+  export function startDraft(digit: string) {
+    draft = tempoDigits(digit);
+    input.value = draft;
+    input.focus();
+    input.setSelectionRange(draft.length, draft.length);
+  }
+
+  function edit(event: Event & { currentTarget: HTMLInputElement }) {
+    draft = tempoDigits(event.currentTarget.value);
+    event.currentTarget.value = draft;
+  }
+
+  function confirm() {
+    if (draft === null) return;
+    const typed = parseTempo(draft);
+    if (typed !== null) tempo = typed;
+    draft = null;
+  }
+
+  function onkeydown(event: KeyboardEvent) {
+    if (event.key === "Escape") draft = null;
+    else if (event.key !== "Enter") return;
+    event.preventDefault();
+    input.blur();
   }
 </script>
 
@@ -29,15 +55,22 @@
     </button>
     <label class="bpm">
       <input
-        type="number"
+        bind:this={input}
+        class:pending
+        style:--digits={Math.max(shown.length, 1)}
+        type="text"
         inputmode="numeric"
-        min={TEMPO.min}
-        max={TEMPO.max}
-        value={tempo}
+        enterkeyhint="done"
+        autocomplete="off"
+        maxlength={MAX_TEMPO_DIGITS}
+        value={shown}
         aria-label="Tempo in BPM"
-        onchange={commit}
+        oninput={edit}
+        onclick={() => input.select()}
+        onblur={confirm}
+        {onkeydown}
       />
-      <span class="label" aria-hidden="true">BPM</span>
+      <span class="label" aria-hidden="true">{pending ? "Enter to set" : "BPM"}</span>
     </label>
     <button
       class="button step"
@@ -90,37 +123,51 @@
   .bpm {
     display: grid;
     justify-items: center;
-  }
-
-  .bpm input {
-    width: 3.2ch;
-    padding: 0;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: none;
+    width: calc(3ch + 0.2em);
     font-family: var(--font-numeric);
     font-size: clamp(4.5rem, 22vw, 6.5rem);
     font-weight: 300;
     font-variant-numeric: tabular-nums;
     line-height: 1;
+  }
+
+  .bpm input {
+    width: calc(var(--digits) * 1ch + 0.2em);
+    padding: 0.1em;
+    border: 0;
+    border-radius: 0.14em;
+    background: transparent;
+    font: inherit;
+    font-variant-numeric: inherit;
     text-align: center;
-    appearance: textfield;
-    -moz-appearance: textfield;
+    caret-color: var(--accent);
+    cursor: text;
   }
 
-  .bpm input:hover,
+  .bpm input::selection {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .bpm input:hover {
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+  }
+
   .bpm input:focus {
-    border-bottom-color: var(--line);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    box-shadow: inset 0 -3px var(--accent);
+    outline: none;
   }
 
-  .bpm input::-webkit-inner-spin-button,
-  .bpm input::-webkit-outer-spin-button {
-    appearance: none;
-    margin: 0;
+  .bpm input.pending {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent);
   }
 
   .bpm .label {
-    margin-top: -0.25rem;
+    margin-top: 0.25rem;
+    font-family: var(--font);
+    line-height: 1.4;
+    white-space: nowrap;
   }
 
   .slider {

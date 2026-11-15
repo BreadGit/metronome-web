@@ -1,7 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const tempoInput = (page: Page) => page.getByRole("spinbutton", { name: "Tempo in BPM" });
+const tempoInput = (page: Page) => page.getByRole("textbox", { name: "Tempo in BPM" });
 const beatButtons = (page: Page) => page.getByRole("button", { name: /^Mute beat/ });
+const radio = (page: Page, group: string, name: string) =>
+  page.getByRole("group", { name: group }).getByRole("radio", { name, exact: true });
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
@@ -74,24 +76,106 @@ test("responds to keyboard shortcuts", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
 });
 
-test("leaves space to focused controls", async ({ page }) => {
-  await page.getByRole("button", { name: "Settings" }).focus();
+test("uses space only to start and stop outside settings", async ({ page }) => {
+  await page.getByRole("button", { name: "Tap" }).click();
   await page.keyboard.press("Space");
-  const dialog = page.getByRole("dialog", { name: "Settings" });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await expect(tempoInput(page)).toHaveValue("80");
 
-  const sixBeats = page.getByRole("group", { name: "Beats" }).getByRole("radio", { name: "6" });
+  const sixBeats = radio(page, "Beats", "6");
   await sixBeats.focus();
   await page.keyboard.press("Space");
-  await expect(sixBeats).toBeChecked();
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await expect(sixBeats).not.toBeChecked();
+  await expect(radio(page, "Beats", "4")).toBeChecked();
+  await page.keyboard.press("Space");
 
   await page.getByRole("button", { name: "Start" }).focus();
   await page.keyboard.press("Space");
   await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
   await page.keyboard.press("Space");
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Start" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  const emphasize = page.getByRole("dialog").getByLabel("Emphasize first beat");
+  await emphasize.focus();
+  await page.keyboard.press("Space");
+  await expect(emphasize).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+});
+
+test("cycles beats and subdivisions with B and S", async ({ page }) => {
+  await page.keyboard.press("b");
+  await expect(beatButtons(page)).toHaveCount(5);
+  await page.keyboard.press("Shift+B");
+  await page.keyboard.press("Shift+B");
+  await page.keyboard.press("Shift+B");
+  await page.keyboard.press("Shift+B");
+  await expect(beatButtons(page)).toHaveCount(1);
+  await page.keyboard.press("Shift+B");
+  await expect(beatButtons(page)).toHaveCount(8);
+  await page.keyboard.press("b");
+  await expect(beatButtons(page)).toHaveCount(1);
+
+  await page.keyboard.press("Shift+S");
+  await expect(radio(page, "Subdivisions", "4")).toBeChecked();
+  await page.keyboard.press("s");
+  await expect(radio(page, "Subdivisions", "1")).toBeChecked();
+  await page.keyboard.press("s");
+  await expect(radio(page, "Subdivisions", "2")).toBeChecked();
+});
+
+test("types a tempo anywhere and applies it on Enter", async ({ page }) => {
+  await page.getByRole("button", { name: "Tap" }).focus();
+  await page.keyboard.type("120");
+  await expect(tempoInput(page)).toBeFocused();
+  await expect(tempoInput(page)).toHaveValue("120");
+  await expect(tempoInput(page)).toHaveClass(/pending/);
+  await expect(page.getByTestId("tempo-marking")).toHaveText("Andante");
+  await expect(page.getByRole("slider", { name: "Tempo slider" })).toHaveValue("80");
+
+  await page.keyboard.press("t");
+  await page.keyboard.press("b");
+  await expect(tempoInput(page)).toHaveValue("120");
+  await expect(beatButtons(page)).toHaveCount(4);
+
+  await page.keyboard.press("Enter");
+  await expect(tempoInput(page)).not.toBeFocused();
+  await expect(tempoInput(page)).toHaveValue("120");
+  await expect(tempoInput(page)).not.toHaveClass(/pending/);
+  await expect(page.getByTestId("tempo-marking")).toHaveText("Allegro");
+});
+
+test("cancels a typed tempo with Escape and confirms it on blur", async ({ page }) => {
+  await page.keyboard.type("99");
+  await page.keyboard.press("Escape");
+  await expect(tempoInput(page)).toHaveValue("80");
+  await expect(tempoInput(page)).not.toBeFocused();
+
+  await page.keyboard.type("66");
+  await page.getByRole("heading", { name: "Metronome" }).click();
+  await expect(tempoInput(page)).toHaveValue("66");
+  await expect(page.getByTestId("tempo-marking")).toHaveText("Adagio");
+});
+
+test("selects the tempo on click so typing replaces it", async ({ page }) => {
+  await tempoInput(page).click();
+  await page.keyboard.type("1");
+  await expect(tempoInput(page)).toHaveValue("1");
+  await page.keyboard.type("4x05");
+  await expect(tempoInput(page)).toHaveValue("140");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("tempo-marking")).toHaveText("Allegro");
+
+  await tempoInput(page).click();
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Enter");
+  await expect(tempoInput(page)).toHaveValue("140");
 });
 
 test("keeps settings across reloads", async ({ page }) => {

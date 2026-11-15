@@ -4,7 +4,7 @@
   import SettingsDialog from "./components/SettingsDialog.svelte";
   import TempoControl from "./components/TempoControl.svelte";
   import { Metronome } from "./lib/metronome";
-  import { BEATS, clampTempo, SUBDIVISIONS, toggleBeat } from "./lib/music";
+  import { BEATS, clampTempo, cycle, SUBDIVISIONS, toggleBeat } from "./lib/music";
   import { browserStorage, loadSettings, saveSettings } from "./lib/settings";
   import { isHandledNatively, shortcutFor } from "./lib/shortcuts";
   import { recordTap } from "./lib/tapTempo";
@@ -16,6 +16,7 @@
   let error = $state<string | null>(null);
   let taps: number[] = [];
   let settingsDialog: SettingsDialog;
+  let tempoControl: TempoControl;
 
   const metronome = new Metronome(initialSettings);
 
@@ -63,20 +64,34 @@
     if (!action) return;
     event.preventDefault();
     switch (action.kind) {
-      case "tempo":
-        settings.tempo = clampTempo(settings.tempo + action.delta);
-        break;
       case "toggle":
         if (!event.repeat) toggle();
         break;
       case "tap":
         if (!event.repeat) tap();
         break;
+      case "typeTempo":
+        tempoControl.startDraft(event.key);
+        break;
+      case "tempo":
+        settings.tempo = clampTempo(settings.tempo + action.delta);
+        break;
+      case "beats":
+        settings.beats = cycle(settings.beats, action.delta, BEATS);
+        break;
+      case "subdivisions":
+        settings.subdivisions = cycle(settings.subdivisions, action.delta, SUBDIVISIONS);
+        break;
     }
+  }
+
+  function onkeyup(event: KeyboardEvent) {
+    if (isHandledNatively(event.target, event.key)) return;
+    if (shortcutFor(event)?.kind === "toggle") event.preventDefault();
   }
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window {onkeydown} {onkeyup} />
 
 <main>
   <header>
@@ -110,7 +125,7 @@
     onToggle={(beat) => (settings.silentBeats = toggleBeat(settings.silentBeats, beat))}
   />
 
-  <TempoControl bind:tempo={settings.tempo} />
+  <TempoControl bind:this={tempoControl} bind:tempo={settings.tempo} />
 
   <div class="meter">
     <Segmented legend="Beats" options={beatOptions} bind:value={settings.beats} />
