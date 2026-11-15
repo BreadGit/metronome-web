@@ -56,6 +56,62 @@ test("changes the tempo with buttons, typing and the slider", async ({ page }) =
   await expect(page.getByTestId("tempo-marking")).toHaveText("Allegro");
 });
 
+test("steps the tempo once per press and repeats while held", async ({ page }) => {
+  const increase = page.getByRole("button", { name: "Increase tempo" });
+  const decrease = page.getByRole("button", { name: "Decrease tempo" });
+  const tempo = async () => Number(await tempoInput(page).inputValue());
+
+  await increase.hover();
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(tempoInput(page)).toHaveValue("81");
+  await page.waitForTimeout(600);
+  await expect(tempoInput(page)).toHaveValue("81");
+
+  await decrease.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(200);
+  await page.mouse.up();
+  await expect(tempoInput(page)).toHaveValue("80");
+
+  await increase.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1000);
+  await page.mouse.up();
+  const released = await tempo();
+  expect(released).toBeGreaterThan(85);
+  await page.waitForTimeout(300);
+  expect(await tempo()).toBe(released);
+
+  await increase.focus();
+  await page.keyboard.press("Enter");
+  await expect(tempoInput(page)).toHaveValue(String(released + 1));
+  await page.keyboard.down("Enter");
+  await page.keyboard.down("Enter");
+  await page.keyboard.up("Enter");
+  await expect(tempoInput(page)).toHaveValue(String(released + 3));
+});
+
+test("stops repeating at the tempo limit", async ({ page }) => {
+  await tempoInput(page).fill("249");
+  await tempoInput(page).press("Enter");
+  await page.getByRole("button", { name: "Increase tempo" }).hover();
+  await page.mouse.down();
+  await page.waitForTimeout(800);
+  await expect(tempoInput(page)).toHaveValue("252");
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+  await expect(tempoInput(page)).toHaveValue("252");
+});
+
+test("confirms a typed tempo before stepping it", async ({ page }) => {
+  await page.keyboard.type("120");
+  await page.getByRole("button", { name: "Increase tempo" }).click();
+  await expect(tempoInput(page)).not.toBeFocused();
+  await expect(tempoInput(page)).toHaveValue("121");
+  await expect(tempoInput(page)).not.toHaveClass(/pending/);
+});
+
 test("responds to keyboard shortcuts", async ({ page }) => {
   await page.keyboard.press("ArrowUp");
   await expect(tempoInput(page)).toHaveValue("81");

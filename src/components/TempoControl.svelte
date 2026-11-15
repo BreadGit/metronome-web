@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { holdToRepeat } from "../lib/holdToRepeat";
   import { clampTempo, TEMPO, tempoMarking } from "../lib/music";
   import { isComposing } from "../lib/shortcuts";
   import { MAX_TEMPO_DIGITS, parseTempo, tempoDigits } from "../lib/tempoEntry";
@@ -34,6 +35,14 @@
     draft = null;
   }
 
+  function step(delta: number): boolean {
+    input.blur();
+    const next = clampTempo(tempo + delta);
+    if (next === tempo) return false;
+    tempo = next;
+    return true;
+  }
+
   function onkeydown(event: KeyboardEvent) {
     if (isComposing(event)) return;
     if (event.key === "Escape") draft = null;
@@ -50,7 +59,7 @@
       class="button step"
       type="button"
       aria-label="Decrease tempo"
-      onclick={() => (tempo = clampTempo(tempo - 1))}
+      {@attach holdToRepeat(() => step(-1))}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -80,7 +89,7 @@
       class="button step"
       type="button"
       aria-label="Increase tempo"
-      onclick={() => (tempo = clampTempo(tempo + 1))}
+      {@attach holdToRepeat(() => step(1))}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -122,6 +131,10 @@
     height: 56px;
     border-radius: 50%;
     padding: 0;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   .bpm {
