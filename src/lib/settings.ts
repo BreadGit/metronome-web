@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   subdivisions: SUBDIVISIONS.default,
   silentBeats: [],
   emphasizeFirstBeat: true,
-  sound: "square_wave",
+  sound: "sine_wave",
   theme: "system",
 };
 
