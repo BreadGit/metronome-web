@@ -1,5 +1,6 @@
 <script lang="ts">
   import { clampTempo, TEMPO, tempoMarking } from "../lib/music";
+  import { isComposing } from "../lib/shortcuts";
   import { MAX_TEMPO_DIGITS, parseTempo, tempoDigits } from "../lib/tempoEntry";
 
   interface Props {
@@ -8,6 +9,7 @@
 
   let { tempo = $bindable() }: Props = $props();
 
+  const hintId = $props.id();
   let input: HTMLInputElement;
   let draft = $state<string | null>(null);
   const shown = $derived(draft ?? String(tempo));
@@ -33,6 +35,7 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
+    if (isComposing(event)) return;
     if (event.key === "Escape") draft = null;
     else if (event.key !== "Enter") return;
     event.preventDefault();
@@ -65,12 +68,13 @@
         maxlength={MAX_TEMPO_DIGITS}
         value={shown}
         aria-label="Tempo in BPM"
+        aria-describedby={pending ? hintId : undefined}
         oninput={edit}
         onclick={() => input.select()}
         onblur={confirm}
         {onkeydown}
       />
-      <span class="label" aria-hidden="true">{pending ? "Enter to set" : "BPM"}</span>
+      <span id={hintId} class="label" aria-hidden="true">{pending ? "Enter to set" : "BPM"}</span>
     </label>
     <button
       class="button step"

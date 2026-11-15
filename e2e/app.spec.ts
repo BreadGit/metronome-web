@@ -101,6 +101,13 @@ test("uses space only to start and stop outside settings", async ({ page }) => {
   await page.keyboard.press("Space");
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
 
+  await page.getByRole("button", { name: "Increase tempo" }).focus();
+  await page.keyboard.press("Shift+Space");
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await expect(tempoInput(page)).toHaveValue("80");
+  await page.keyboard.press("Shift+Space");
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+
   await page.getByRole("button", { name: "Settings" }).click();
   const emphasize = page.getByRole("dialog").getByLabel("Emphasize first beat");
   await emphasize.focus();

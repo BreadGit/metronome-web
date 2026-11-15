@@ -8,7 +8,7 @@ export type ShortcutAction =
 
 export interface Shortcut {
   keys: readonly string[];
-  shift: boolean;
+  shift?: boolean;
   label: string;
   description: string;
   action: ShortcutAction;
@@ -19,7 +19,6 @@ const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 export const SHORTCUTS: readonly Shortcut[] = [
   {
     keys: [" "],
-    shift: false,
     label: "Space",
     description: "Start or stop",
     action: { kind: "toggle" },
@@ -92,13 +91,19 @@ export const SHORTCUTS: readonly Shortcut[] = [
 
 export type ShortcutKey = Pick<
   KeyboardEvent,
-  "key" | "shiftKey" | "ctrlKey" | "metaKey" | "altKey"
+  "key" | "shiftKey" | "ctrlKey" | "metaKey" | "altKey" | "isComposing" | "keyCode"
 >;
 
+export function isComposing(event: Pick<KeyboardEvent, "isComposing" | "keyCode">): boolean {
+  return event.isComposing || event.keyCode === 229;
+}
+
 export function shortcutFor(event: ShortcutKey): ShortcutAction | null {
-  if (event.ctrlKey || event.metaKey || event.altKey) return null;
+  if (event.ctrlKey || event.metaKey || event.altKey || isComposing(event)) return null;
   const key = event.key.toLowerCase();
-  const shortcut = SHORTCUTS.find((s) => s.shift === event.shiftKey && s.keys.includes(key));
+  const shortcut = SHORTCUTS.find(
+    (s) => (s.shift ?? event.shiftKey) === event.shiftKey && s.keys.includes(key),
+  );
   return shortcut?.action ?? null;
 }
 

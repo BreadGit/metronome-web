@@ -3,12 +3,22 @@ import { describe, expect, it } from "vitest";
 import { isHandledNatively, shortcutFor, type ShortcutKey } from "./shortcuts";
 
 function key(key: string, modifiers: Partial<ShortcutKey> = {}): ShortcutKey {
-  return { key, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, ...modifiers };
+  return {
+    key,
+    shiftKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    isComposing: false,
+    keyCode: 0,
+    ...modifiers,
+  };
 }
 
 describe("shortcutFor", () => {
-  it("maps space to start/stop", () => {
+  it("maps space to start/stop, with or without shift", () => {
     expect(shortcutFor(key(" "))).toEqual({ kind: "toggle" });
+    expect(shortcutFor(key(" ", { shiftKey: true }))).toEqual({ kind: "toggle" });
   });
 
   it("maps arrows to tempo steps of 1, or 10 with shift", () => {
@@ -45,6 +55,11 @@ describe("shortcutFor", () => {
     expect(shortcutFor(key("t", { ctrlKey: true }))).toBeNull();
     expect(shortcutFor(key(" ", { metaKey: true }))).toBeNull();
     expect(shortcutFor(key("ArrowUp", { altKey: true }))).toBeNull();
+  });
+
+  it("ignores keys that are part of an IME composition", () => {
+    expect(shortcutFor(key(" ", { isComposing: true }))).toBeNull();
+    expect(shortcutFor(key("1", { keyCode: 229 }))).toBeNull();
   });
 });
 
