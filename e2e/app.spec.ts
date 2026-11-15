@@ -224,38 +224,60 @@ test("starts and stops with space while the volume has focus", async ({ page }) 
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
 });
 
+interface OutputProbe {
+  context: BaseAudioContext;
+  peaks: { time: number; peak: number }[];
+  windowSeconds: number;
+}
+
+declare global {
+  interface Window {
+    outputProbe: OutputProbe;
+  }
+}
+
 test("stays silent after muting while stopped and restarting", async ({ page }) => {
   await page.addInitScript(() => {
     const NativeGainNode = window.GainNode;
-    const peaks: number[] = [];
-    Object.assign(window, { gainPeaks: peaks });
     window.GainNode = class extends NativeGainNode {
       constructor(context: BaseAudioContext, options?: GainOptions) {
         super(context, options);
         const analyser = new AnalyserNode(context, { fftSize: 2048 });
         this.connect(analyser);
         const samples = new Float32Array(analyser.fftSize);
+        const probe: OutputProbe = {
+          context,
+          peaks: [],
+          windowSeconds: analyser.fftSize / context.sampleRate,
+        };
+        window.outputProbe = probe;
         setInterval(() => {
           analyser.getFloatTimeDomainData(samples);
-          peaks.push(Math.max(...samples.map(Math.abs)));
+          probe.peaks.push({ time: context.currentTime, peak: Math.max(...samples.map(Math.abs)) });
         }, 5);
       }
     };
   });
   await page.reload();
+
   await volumeSlider(page).fill("100");
   await page.getByRole("button", { name: "Start" }).click();
   await expect(page.locator(".beat.lit")).toHaveCount(1, { timeout: 3000 });
   await page.getByRole("button", { name: "Stop" }).click();
   await page.getByRole("button", { name: "Mute", exact: true }).click();
-  await page.evaluate(() => (window as unknown as { gainPeaks: number[] }).gainPeaks.splice(0));
+  await expect.poll(() => page.evaluate(() => window.outputProbe.context.state)).toBe("suspended");
+  const freshAfter = await page.evaluate(() => {
+    const { context, windowSeconds } = window.outputProbe;
+    return context.currentTime + windowSeconds;
+  });
 
   await page.getByRole("button", { name: "Start" }).click();
   await expect(page.locator(".beat.lit")).toHaveCount(1, { timeout: 3000 });
   await page.waitForTimeout(200);
-  const peak = await page.evaluate(() =>
-    Math.max(...(window as unknown as { gainPeaks: number[] }).gainPeaks),
-  );
+  const peak = await page.evaluate((after) => {
+    const fresh = window.outputProbe.peaks.filter((p) => p.time > after);
+    return Math.max(0, ...fresh.map((p) => p.peak));
+  }, freshAfter);
   expect(peak).toBe(0);
 });
 
