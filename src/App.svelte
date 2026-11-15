@@ -1,13 +1,14 @@
 <script lang="ts">
   import BeatIndicators from "./components/BeatIndicators.svelte";
   import Segmented from "./components/Segmented.svelte";
+  import ShortcutLabel from "./components/ShortcutLabel.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
   import TempoControl from "./components/TempoControl.svelte";
   import VolumeControl from "./components/VolumeControl.svelte";
   import { Metronome } from "./lib/metronome";
   import { BEATS, clampTempo, cycle, SUBDIVISIONS, toggleBeat } from "./lib/music";
   import { browserStorage, loadSettings, saveSettings } from "./lib/settings";
-  import { isHandledNatively, shortcutFor } from "./lib/shortcuts";
+  import { isHandledNatively, shortcutFor, shortcutLetter } from "./lib/shortcuts";
   import { recordTap } from "./lib/tapTempo";
 
   const storage = browserStorage();
@@ -129,9 +130,15 @@
   <TempoControl bind:this={tempoControl} bind:tempo={settings.tempo} />
 
   <div class="meter">
-    <Segmented legend="Beats" options={beatOptions} bind:value={settings.beats} />
+    <Segmented
+      legend="Beats"
+      shortcut={shortcutLetter("beats")}
+      options={beatOptions}
+      bind:value={settings.beats}
+    />
     <Segmented
       legend="Subdivisions"
+      shortcut={shortcutLetter("subdivisions")}
       options={subdivisionOptions}
       bind:value={settings.subdivisions}
     />
@@ -140,7 +147,9 @@
   <div class="controls">
     <VolumeControl bind:volume={settings.volume} bind:muted={settings.muted} />
     <div class="actions">
-      <button class="button tap" type="button" onclick={tap}>Tap</button>
+      <button class="button tap" type="button" onclick={tap}>
+        <ShortcutLabel text="Tap" letter={shortcutLetter("tap")} />
+      </button>
       <button class="button primary start" type="button" onclick={toggle}>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           {#if playing}

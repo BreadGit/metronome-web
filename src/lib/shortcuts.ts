@@ -31,30 +31,30 @@ export const SHORTCUTS: readonly Shortcut[] = [
     action: { kind: "typeTempo" },
   },
   {
-    keys: ["arrowup", "arrowright"],
+    keys: ["arrowup", "arrowright", "w", "d"],
     shift: false,
-    label: "↑ →",
+    label: "↑ → W D",
     description: "Tempo +1",
     action: { kind: "tempo", delta: 1 },
   },
   {
-    keys: ["arrowdown", "arrowleft"],
+    keys: ["arrowdown", "arrowleft", "s", "a"],
     shift: false,
-    label: "↓ ←",
+    label: "↓ ← S A",
     description: "Tempo −1",
     action: { kind: "tempo", delta: -1 },
   },
   {
-    keys: ["arrowup", "arrowright"],
+    keys: ["arrowup", "arrowright", "w", "d"],
     shift: true,
-    label: "Shift ↑ →",
+    label: "Shift ↑ → W D",
     description: "Tempo +10",
     action: { kind: "tempo", delta: 10 },
   },
   {
-    keys: ["arrowdown", "arrowleft"],
+    keys: ["arrowdown", "arrowleft", "s", "a"],
     shift: true,
-    label: "Shift ↓ ←",
+    label: "Shift ↓ ← S A",
     description: "Tempo −10",
     action: { kind: "tempo", delta: -10 },
   },
@@ -74,20 +74,24 @@ export const SHORTCUTS: readonly Shortcut[] = [
     action: { kind: "beats", delta: -1 },
   },
   {
-    keys: ["s"],
+    keys: ["v"],
     shift: false,
-    label: "S",
+    label: "V",
     description: "Subdivisions +1",
     action: { kind: "subdivisions", delta: 1 },
   },
   {
-    keys: ["s"],
+    keys: ["v"],
     shift: true,
-    label: "Shift S",
+    label: "Shift V",
     description: "Subdivisions −1",
     action: { kind: "subdivisions", delta: -1 },
   },
 ];
+
+export function shortcutLetter(kind: ShortcutAction["kind"]): string | undefined {
+  return SHORTCUTS.find((s) => s.action.kind === kind && !s.shift)?.keys[0];
+}
 
 export type ShortcutKey = Pick<
   KeyboardEvent,

@@ -1,16 +1,19 @@
 <script lang="ts" generics="T extends string | number">
+  import ShortcutLabel from "./ShortcutLabel.svelte";
+
   interface Props {
     legend: string;
+    shortcut?: string;
     options: readonly { value: T; label: string }[];
     value: T;
   }
 
-  let { legend, options, value = $bindable() }: Props = $props();
+  let { legend, shortcut, options, value = $bindable() }: Props = $props();
   const name = $props.id();
 </script>
 
 <fieldset>
-  <legend class="label">{legend}</legend>
+  <legend class="label"><ShortcutLabel text={legend} letter={shortcut} /></legend>
   <div class="segments">
     {#each options as option (option.value)}
       <label>

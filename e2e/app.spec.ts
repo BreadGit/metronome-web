@@ -150,11 +150,22 @@ test("responds to keyboard shortcuts", async ({ page }) => {
   await expect(tempoInput(page)).toHaveValue("90");
   await page.keyboard.press("Shift+ArrowDown");
   await expect(tempoInput(page)).toHaveValue("80");
+  await page.keyboard.press("w");
+  await page.keyboard.press("d");
+  await expect(tempoInput(page)).toHaveValue("82");
+  await page.keyboard.press("Shift+S");
+  await expect(tempoInput(page)).toHaveValue("72");
+  await page.keyboard.press("a");
+  await page.keyboard.press("Shift+W");
+  await expect(tempoInput(page)).toHaveValue("81");
+  await page.keyboard.press("Shift+ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await expect(tempoInput(page)).toHaveValue("70");
 
   await page.keyboard.press("t");
   await page.waitForTimeout(500);
   await page.keyboard.press("t");
-  await expect(tempoInput(page)).not.toHaveValue("80");
+  await expect(tempoInput(page)).not.toHaveValue("70");
 
   await page.keyboard.press("Space");
   await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
@@ -215,11 +226,11 @@ test("cycles beats and subdivisions with B and S", async ({ page }) => {
   await page.keyboard.press("b");
   await expect(beatButtons(page)).toHaveCount(1);
 
-  await page.keyboard.press("Shift+S");
+  await page.keyboard.press("Shift+V");
   await expect(radio(page, "Subdivisions", "4")).toBeChecked();
-  await page.keyboard.press("s");
+  await page.keyboard.press("v");
   await expect(radio(page, "Subdivisions", "1")).toBeChecked();
-  await page.keyboard.press("s");
+  await page.keyboard.press("v");
   await expect(radio(page, "Subdivisions", "2")).toBeChecked();
 });
 

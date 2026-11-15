@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { isHandledNatively, shortcutFor, type ShortcutKey } from "./shortcuts";
+import { isHandledNatively, shortcutFor, shortcutLetter, type ShortcutKey } from "./shortcuts";
 
 function key(key: string, modifiers: Partial<ShortcutKey> = {}): ShortcutKey {
   return {
@@ -33,16 +33,25 @@ describe("shortcutFor", () => {
     });
   });
 
+  it("maps WASD to tempo steps like the arrows", () => {
+    expect(shortcutFor(key("w"))).toEqual({ kind: "tempo", delta: 1 });
+    expect(shortcutFor(key("d"))).toEqual({ kind: "tempo", delta: 1 });
+    expect(shortcutFor(key("s"))).toEqual({ kind: "tempo", delta: -1 });
+    expect(shortcutFor(key("a"))).toEqual({ kind: "tempo", delta: -1 });
+    expect(shortcutFor(key("W", { shiftKey: true }))).toEqual({ kind: "tempo", delta: 10 });
+    expect(shortcutFor(key("A", { shiftKey: true }))).toEqual({ kind: "tempo", delta: -10 });
+  });
+
   it("maps T to tap tempo regardless of case", () => {
     expect(shortcutFor(key("t"))).toEqual({ kind: "tap" });
     expect(shortcutFor(key("T"))).toEqual({ kind: "tap" });
   });
 
-  it("maps B and S to beats and subdivisions, stepping back with shift", () => {
+  it("maps B and V to beats and subdivisions, stepping back with shift", () => {
     expect(shortcutFor(key("b"))).toEqual({ kind: "beats", delta: 1 });
     expect(shortcutFor(key("B", { shiftKey: true }))).toEqual({ kind: "beats", delta: -1 });
-    expect(shortcutFor(key("s"))).toEqual({ kind: "subdivisions", delta: 1 });
-    expect(shortcutFor(key("S", { shiftKey: true }))).toEqual({ kind: "subdivisions", delta: -1 });
+    expect(shortcutFor(key("v"))).toEqual({ kind: "subdivisions", delta: 1 });
+    expect(shortcutFor(key("V", { shiftKey: true }))).toEqual({ kind: "subdivisions", delta: -1 });
   });
 
   it("maps digits to typing a tempo", () => {
@@ -60,6 +69,14 @@ describe("shortcutFor", () => {
   it("ignores keys that are part of an IME composition", () => {
     expect(shortcutFor(key(" ", { isComposing: true }))).toBeNull();
     expect(shortcutFor(key("1", { keyCode: 229 }))).toBeNull();
+  });
+});
+
+describe("shortcutLetter", () => {
+  it("gives the unshifted letter for an action", () => {
+    expect(shortcutLetter("tap")).toBe("t");
+    expect(shortcutLetter("beats")).toBe("b");
+    expect(shortcutLetter("subdivisions")).toBe("v");
   });
 });
 
