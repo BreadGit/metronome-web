@@ -54,8 +54,14 @@ export function normalizePosition(
   return { beat, sub };
 }
 
-export function nextPosition(position: Position, beats: number, subdivisions: number): Position {
-  return normalizePosition({ beat: position.beat, sub: position.sub + 1 }, beats, subdivisions);
+export function advancePosition(
+  position: Position,
+  steps: number,
+  beats: number,
+  subdivisions: number,
+): Position {
+  const index = (position.beat * subdivisions + position.sub + steps) % (beats * subdivisions);
+  return { beat: Math.floor(index / subdivisions), sub: index % subdivisions };
 }
 
 export function toggleBeat(silentBeats: readonly number[], beat: number): number[] {

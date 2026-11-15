@@ -24,6 +24,10 @@ test("starts and stops, flashing the beats", async ({ page }) => {
   await page.getByRole("button", { name: "Start" }).click();
   await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
   await expect(page.locator(".beat.lit")).toHaveCount(1, { timeout: 3000 });
+  await expect
+    .poll(() => beatButtons(page).nth(1).getAttribute("class"), { intervals: [10] })
+    .toContain("lit");
+  expect(page.workers()).toHaveLength(1);
 
   await page.getByRole("button", { name: "Stop" }).click();
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
@@ -64,11 +68,30 @@ test("responds to keyboard shortcuts", async ({ page }) => {
   await page.keyboard.press("t");
   await expect(tempoInput(page)).not.toHaveValue("80");
 
-  await page.getByRole("button", { name: "Tap" }).focus();
   await page.keyboard.press("Space");
   await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
   await page.keyboard.press("Space");
   await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+});
+
+test("leaves space to focused controls", async ({ page }) => {
+  await page.getByRole("button", { name: "Settings" }).focus();
+  await page.keyboard.press("Space");
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Close" }).click();
+
+  const sixBeats = page.getByRole("group", { name: "Beats" }).getByRole("radio", { name: "6" });
+  await sixBeats.focus();
+  await page.keyboard.press("Space");
+  await expect(sixBeats).toBeChecked();
+
+  await page.getByRole("button", { name: "Start" }).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start" })).toBeFocused();
 });
 
 test("keeps settings across reloads", async ({ page }) => {

@@ -1,3 +1,4 @@
+import { startClock } from "./clock";
 import {
   INITIAL_STATE,
   latestDue,
@@ -9,7 +10,7 @@ import {
 import { loadSoundBank, type SoundBank, type SoundId } from "./sounds";
 
 const TIMER_INTERVAL_MS = 25;
-const MIN_LEAD_S = 0.05;
+const START_LEAD_S = 0.05;
 const LOOKAHEAD_S = 0.1;
 
 export interface MetronomeConfig extends TickConfig {
@@ -26,7 +27,7 @@ export class Metronome {
   config: MetronomeConfig;
   #sounds: Promise<SoundBank> | null = null;
   #context: AudioContext | null = null;
-  #timer: ReturnType<typeof setInterval> | undefined;
+  #stopClock: (() => void) | undefined;
   #session = 0;
   #running = false;
   #state: SchedulerState = INITIAL_STATE;
@@ -49,7 +50,7 @@ export class Metronome {
       this.#beats = [];
       const schedule = () => this.#schedule(context, bank);
       schedule();
-      this.#timer = setInterval(schedule, TIMER_INTERVAL_MS);
+      this.#stopClock = startClock(schedule, TIMER_INTERVAL_MS);
     } catch (error) {
       if (session !== this.#session) return;
       this.stop();
@@ -60,8 +61,8 @@ export class Metronome {
   stop(): void {
     this.#running = false;
     this.#session++;
-    clearInterval(this.#timer);
-    this.#timer = undefined;
+    this.#stopClock?.();
+    this.#stopClock = undefined;
     for (const source of this.#sources) source.stop();
     this.#sources.clear();
     this.#beats = [];
@@ -90,12 +91,11 @@ export class Metronome {
 
   #schedule(context: AudioContext, bank: SoundBank): void {
     const now = context.currentTime;
-    const { ticks, state } = planTicks(
-      this.#state,
-      this.config,
-      now + MIN_LEAD_S,
-      now + LOOKAHEAD_S,
-    );
+    const { ticks, state } = planTicks(this.#state, this.config, {
+      now,
+      start: now + START_LEAD_S,
+      horizon: now + LOOKAHEAD_S,
+    });
     this.#state = state;
     const sound = bank[this.config.sound];
     for (const tick of ticks) {

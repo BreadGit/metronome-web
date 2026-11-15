@@ -74,13 +74,9 @@
         break;
     }
   }
-
-  function onkeyup(event: KeyboardEvent) {
-    if (event.key === " " && !isHandledNatively(event.target, event.key)) event.preventDefault();
-  }
 </script>
 
-<svelte:window {onkeydown} {onkeyup} />
+<svelte:window {onkeydown} />
 
 <main>
   <header>

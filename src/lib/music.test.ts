@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  advancePosition,
   clampTempo,
-  nextPosition,
   normalizePosition,
   tempoMarking,
   tickInterval,
@@ -62,12 +62,12 @@ describe("tickType", () => {
   });
 });
 
-describe("nextPosition", () => {
+describe("advancePosition", () => {
   it("walks through subdivisions and wraps at the end of the bar", () => {
     let position = { beat: 0, sub: 0 };
     const positions = [position];
     for (let i = 0; i < 6; i++) {
-      position = nextPosition(position, 3, 2);
+      position = advancePosition(position, 1, 3, 2);
       positions.push(position);
     }
     expect(positions).toEqual([
@@ -79,6 +79,11 @@ describe("nextPosition", () => {
       { beat: 2, sub: 1 },
       { beat: 0, sub: 0 },
     ]);
+  });
+
+  it("skips several steps at once", () => {
+    expect(advancePosition({ beat: 1, sub: 1 }, 3, 3, 2)).toEqual({ beat: 0, sub: 0 });
+    expect(advancePosition({ beat: 0, sub: 0 }, 13, 3, 2)).toEqual({ beat: 0, sub: 1 });
   });
 });
 

@@ -1,5 +1,5 @@
 import {
-  nextPosition,
+  advancePosition,
   normalizePosition,
   tickInterval,
   tickType,
@@ -20,6 +20,12 @@ export interface SchedulerState {
   lastTime: number | null;
 }
 
+export interface PlanWindow {
+  now: number;
+  start: number;
+  horizon: number;
+}
+
 export interface PlannedTick {
   time: number;
   duration: number;
@@ -30,11 +36,12 @@ export interface PlannedTick {
 
 export const INITIAL_STATE: SchedulerState = { next: { beat: 0, sub: 0 }, lastTime: null };
 
+/** Plans ticks before `horizon`. The first tick plays at `start`; later ticks stay on the grid of
+ * the last tick, and grid ticks before `now` are skipped without being returned. */
 export function planTicks(
   state: SchedulerState,
   config: TickConfig,
-  earliest: number,
-  horizon: number,
+  { now, start, horizon }: PlanWindow,
 ): { ticks: PlannedTick[]; state: SchedulerState } {
   const { beats, subdivisions } = config;
   const duration = tickInterval(config.tempo, subdivisions);
@@ -42,8 +49,14 @@ export function planTicks(
   let position = normalizePosition(state.next, beats, subdivisions);
   let lastTime = state.lastTime;
 
+  if (lastTime !== null) {
+    const missed = Math.max(0, Math.ceil((now - lastTime) / duration) - 1);
+    lastTime += missed * duration;
+    position = advancePosition(position, missed, beats, subdivisions);
+  }
+
   for (;;) {
-    const time = lastTime === null ? earliest : Math.max(lastTime + duration, earliest);
+    const time = lastTime === null ? start : lastTime + duration;
     if (time >= horizon) break;
     ticks.push({
       time,
@@ -53,7 +66,7 @@ export function planTicks(
       silent: config.silentBeats.includes(position.beat),
     });
     lastTime = time;
-    position = nextPosition(position, beats, subdivisions);
+    position = advancePosition(position, 1, beats, subdivisions);
   }
 
   return { ticks, state: { next: position, lastTime } };

@@ -63,6 +63,8 @@ export function shortcutFor(event: ShortcutKey): ShortcutAction | null {
 export function isHandledNatively(target: EventTarget | null, key: string): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable || target.closest("dialog")) return true;
+  if (key === " ")
+    return target.closest("a[href], button, input, select, summary, textarea") !== null;
   if (target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) return true;
   if (target instanceof HTMLInputElement) {
     return target.type === "range" || target.type === "radio" ? key.startsWith("Arrow") : true;
