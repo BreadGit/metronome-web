@@ -406,3 +406,16 @@ test("keeps settings across reloads", async ({ page }) => {
   await expect(dialog.getByLabel("Sound")).toHaveValue("pluck");
   await expect(dialog.getByLabel("Emphasize first beat")).not.toBeChecked();
 });
+
+test("fits a short phone screen with every beat shown", async ({ page }) => {
+  await page.setViewportSize({ width: 357, height: 638 });
+  await radio(page, "Beats", "8").check();
+  await radio(page, "Subdivisions", "4").check();
+  const start = page.getByRole("button", { name: "Start" });
+  await expect(start).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole("button", { name: "Tap" })).toBeInViewport({ ratio: 1 });
+  const rows = await beatButtons(page).evaluateAll(
+    (buttons) => new Set(buttons.map((b) => b.getBoundingClientRect().top)).size,
+  );
+  expect(rows).toBe(1);
+});

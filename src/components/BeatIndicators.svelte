@@ -50,7 +50,6 @@
 <style>
   .beats {
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
     gap: 0.25rem;
   }
@@ -58,7 +57,8 @@
   .beat {
     display: grid;
     place-items: center;
-    width: 44px;
+    flex: 0 1 44px;
+    min-width: 0;
     height: 44px;
     padding: 0;
     border: 0;
@@ -68,8 +68,8 @@
   }
 
   .dot {
-    width: 32px;
-    height: 32px;
+    width: min(32px, 100%);
+    aspect-ratio: 1;
     border: 3px solid var(--line);
     border-radius: 50%;
     background: var(--line);
