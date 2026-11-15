@@ -5,6 +5,8 @@
 A metronome for the browser: tempo 30–252 BPM, tap tempo, up to 8 beats with
 subdivisions, muted beats and four click sounds.
 
+**Open it at [metronome-web.breadgit.workers.dev](https://metronome-web.breadgit.workers.dev).**
+
 It is a web port of [Metronome](https://github.com/Kr0oked/Metronome) for
 Android by Philipp Bobek (Kr0oked), whose click sounds it uses unchanged.
 
