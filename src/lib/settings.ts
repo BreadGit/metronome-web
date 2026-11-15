@@ -1,5 +1,6 @@
 import { BEATS, SUBDIVISIONS, TEMPO } from "./music";
 import { SOUNDS, type SoundId } from "./sounds";
+import { VOLUME } from "./volume";
 
 export const THEMES = ["system", "light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
@@ -12,6 +13,8 @@ export interface Settings {
   emphasizeFirstBeat: boolean;
   sound: SoundId;
   theme: Theme;
+  volume: number;
+  muted: boolean;
 }
 
 export type SettingsStorage = Pick<Storage, "getItem" | "setItem">;
@@ -28,6 +31,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   emphasizeFirstBeat: true,
   sound: "sine_wave",
   theme: "system",
+  volume: VOLUME.default,
+  muted: false,
 };
 
 function intInRange(value: unknown, range: { min: number; max: number }): value is number {
@@ -62,6 +67,8 @@ export function parseSettings(raw: unknown): Settings {
         : d.emphasizeFirstBeat,
     sound: oneOf(input.sound, SOUND_IDS) ? input.sound : d.sound,
     theme: oneOf(input.theme, THEMES) ? input.theme : d.theme,
+    volume: intInRange(input.volume, VOLUME) ? input.volume : d.volume,
+    muted: typeof input.muted === "boolean" ? input.muted : d.muted,
   };
 }
 

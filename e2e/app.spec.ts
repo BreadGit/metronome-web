@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const tempoInput = (page: Page) => page.getByRole("textbox", { name: "Tempo in BPM" });
+const volumeSlider = (page: Page) => page.getByRole("slider", { name: "Volume" });
 const beatButtons = (page: Page) => page.getByRole("button", { name: /^Mute beat/ });
 const radio = (page: Page, group: string, name: string) =>
   page.getByRole("group", { name: group }).getByRole("radio", { name, exact: true });
@@ -185,10 +186,50 @@ test("selects the tempo on click so typing replaces it", async ({ page }) => {
   await expect(tempoInput(page)).toHaveValue("140");
 });
 
+test("mutes, unmutes and sets the volume", async ({ page }) => {
+  await expect(volumeSlider(page)).toHaveValue("75");
+  await expect(volumeSlider(page)).toHaveAttribute("aria-valuetext", "75%");
+
+  await page.getByRole("button", { name: "Mute", exact: true }).click();
+  await expect(volumeSlider(page)).toHaveValue("0");
+  await page.getByRole("button", { name: "Unmute" }).click();
+  await expect(volumeSlider(page)).toHaveValue("75");
+
+  await page.getByRole("button", { name: "Mute", exact: true }).click();
+  await volumeSlider(page).fill("30");
+  await expect(volumeSlider(page)).toHaveAttribute("aria-valuetext", "30%");
+  await expect(page.getByRole("button", { name: "Mute", exact: true })).toBeVisible();
+
+  await volumeSlider(page).fill("0");
+  await page.getByRole("button", { name: "Unmute" }).click();
+  await expect(volumeSlider(page)).toHaveValue("75");
+});
+
+test("starts and stops with space while the volume has focus", async ({ page }) => {
+  await volumeSlider(page).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(volumeSlider(page)).toHaveValue("74");
+  await expect(tempoInput(page)).toHaveValue("80");
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+
+  const mute = page.getByRole("button", { name: "Mute", exact: true });
+  await mute.focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await expect(mute).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+});
+
 test("keeps settings across reloads", async ({ page }) => {
   await page.getByRole("button", { name: "Increase tempo" }).click();
   await page.getByRole("group", { name: "Beats" }).getByRole("radio", { name: "6" }).check();
   await beatButtons(page).nth(2).click();
+  await volumeSlider(page).fill("40");
+  await page.getByRole("button", { name: "Mute", exact: true }).click();
 
   await page.getByRole("button", { name: "Settings" }).click();
   const dialog = page.getByRole("dialog", { name: "Settings" });
@@ -205,6 +246,9 @@ test("keeps settings across reloads", async ({ page }) => {
   await expect(beatButtons(page).nth(2)).toHaveAttribute("aria-pressed", "true");
   await expect(beatButtons(page).nth(1)).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(volumeSlider(page)).toHaveValue("0");
+  await page.getByRole("button", { name: "Unmute" }).click();
+  await expect(volumeSlider(page)).toHaveValue("40");
   await page.getByRole("button", { name: "Settings" }).click();
   await expect(dialog.getByLabel("Sound")).toHaveValue("pluck");
   await expect(dialog.getByLabel("Emphasize first beat")).not.toBeChecked();

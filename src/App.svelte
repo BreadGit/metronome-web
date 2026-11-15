@@ -3,6 +3,7 @@
   import Segmented from "./components/Segmented.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
   import TempoControl from "./components/TempoControl.svelte";
+  import VolumeControl from "./components/VolumeControl.svelte";
   import { Metronome } from "./lib/metronome";
   import { BEATS, clampTempo, cycle, SUBDIVISIONS, toggleBeat } from "./lib/music";
   import { browserStorage, loadSettings, saveSettings } from "./lib/settings";
@@ -136,18 +137,21 @@
     />
   </div>
 
-  <div class="actions">
-    <button class="button tap" type="button" onclick={tap}>Tap</button>
-    <button class="button primary start" type="button" onclick={toggle}>
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        {#if playing}
-          <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="currentColor" />
-        {:else}
-          <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" />
-        {/if}
-      </svg>
-      {playing ? "Stop" : "Start"}
-    </button>
+  <div class="controls">
+    <VolumeControl bind:volume={settings.volume} bind:muted={settings.muted} />
+    <div class="actions">
+      <button class="button tap" type="button" onclick={tap}>Tap</button>
+      <button class="button primary start" type="button" onclick={toggle}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          {#if playing}
+            <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="currentColor" />
+          {:else}
+            <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" />
+          {/if}
+        </svg>
+        {playing ? "Stop" : "Start"}
+      </button>
+    </div>
   </div>
   {#if error}
     <p class="error" role="alert">{error}</p>
@@ -186,11 +190,16 @@
     gap: 1rem;
   }
 
+  .controls {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+
   .actions {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 0.75rem;
-    margin-top: auto;
   }
 
   .actions .button {
@@ -205,7 +214,7 @@
       padding-bottom: 3rem;
     }
 
-    .actions {
+    .controls {
       margin-top: 0.5rem;
     }
   }

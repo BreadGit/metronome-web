@@ -34,6 +34,8 @@ const custom: Settings = {
   emphasizeFirstBeat: false,
   sound: "pluck",
   theme: "dark",
+  volume: 40,
+  muted: true,
 };
 
 describe("parseSettings", () => {
@@ -57,6 +59,8 @@ describe("parseSettings", () => {
         emphasizeFirstBeat: "yes",
         sound: "cowbell",
         theme: "blue",
+        volume: 101,
+        muted: 1,
       }),
     ).toEqual({
       ...DEFAULT_SETTINGS,
@@ -67,6 +71,19 @@ describe("parseSettings", () => {
   it("drops invalid and duplicate silent beats and sorts them", () => {
     expect(parseSettings({ silentBeats: [5, "1", 8, -1, 0, 5, 1.5] }).silentBeats).toEqual([0, 5]);
     expect(parseSettings({ silentBeats: "1,2" }).silentBeats).toEqual([]);
+  });
+
+  it("fills in fields missing from older stored settings", () => {
+    const older: Partial<Settings> = { ...custom };
+    delete older.volume;
+    delete older.muted;
+    expect(parseSettings(older)).toEqual({ ...custom, volume: 75, muted: false });
+  });
+
+  it("rejects fractional and negative volumes", () => {
+    expect(parseSettings({ volume: 33.5 }).volume).toBe(DEFAULT_SETTINGS.volume);
+    expect(parseSettings({ volume: -1 }).volume).toBe(DEFAULT_SETTINGS.volume);
+    expect(parseSettings({ volume: 0 }).volume).toBe(0);
   });
 });
 
