@@ -112,6 +112,35 @@ test("confirms a typed tempo before stepping it", async ({ page }) => {
   await expect(tempoInput(page)).not.toHaveClass(/pending/);
 });
 
+test("scrolls the tempo with the wheel over the number", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 300 });
+  await tempoInput(page).evaluate((input) => input.scrollIntoView({ block: "center" }));
+  const scrollY = await page.evaluate(() => window.scrollY);
+  const maxScrollY = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight,
+  );
+  expect(scrollY).toBeGreaterThan(0);
+  expect(scrollY).toBeLessThan(maxScrollY);
+
+  await tempoInput(page).hover();
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -100);
+  await expect(tempoInput(page)).toHaveValue("83");
+  for (let i = 0; i < 5; i++) await page.mouse.wheel(0, 100);
+  await expect(tempoInput(page)).toHaveValue("78");
+  await expect(page.getByTestId("tempo-marking")).toHaveText("Andante");
+  await expect(page.getByRole("slider", { name: "Tempo slider" })).toHaveValue("78");
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+
+  await page.keyboard.type("120");
+  await page.mouse.wheel(0, -100);
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(200);
+  await expect(tempoInput(page)).toHaveValue("120");
+  await expect(tempoInput(page)).toHaveClass(/pending/);
+  await expect(page.getByRole("slider", { name: "Tempo slider" })).toHaveValue("78");
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+});
+
 test("responds to keyboard shortcuts", async ({ page }) => {
   await page.keyboard.press("ArrowUp");
   await expect(tempoInput(page)).toHaveValue("81");

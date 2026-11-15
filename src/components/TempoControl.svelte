@@ -3,6 +3,7 @@
   import { clampTempo, TEMPO, tempoMarking } from "../lib/music";
   import { isComposing } from "../lib/shortcuts";
   import { MAX_TEMPO_DIGITS, parseTempo, tempoDigits } from "../lib/tempoEntry";
+  import { wheelToStep } from "../lib/wheelSteps";
 
   interface Props {
     tempo: number;
@@ -82,6 +83,9 @@
         onclick={() => input.select()}
         onblur={confirm}
         {onkeydown}
+        {@attach wheelToStep((delta) => {
+          if (draft === null) step(delta);
+        })}
       />
       <span id={hintId} class="label" aria-hidden="true">{pending ? "Enter to set" : "BPM"}</span>
     </label>
