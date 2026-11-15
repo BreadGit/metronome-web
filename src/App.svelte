@@ -173,12 +173,12 @@
   main {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: clamp(0.5rem, 2.5dvh, 1.5rem);
     width: 100%;
     max-width: 30rem;
     min-height: 100dvh;
     margin: 0 auto;
-    padding: 0.5rem clamp(16px, 5vw, 2rem) 1.5rem;
+    padding: clamp(0.25rem, 1dvh, 0.5rem) clamp(16px, 5vw, 2rem) clamp(0.5rem, 2.5dvh, 1.5rem);
   }
 
   header {
@@ -196,7 +196,7 @@
 
   .meter {
     display: grid;
-    gap: 1rem;
+    gap: clamp(0.5rem, 2dvh, 1rem);
   }
 
   .controls {
@@ -212,7 +212,7 @@
   }
 
   .actions .button {
-    min-height: 64px;
+    min-height: clamp(44px, 8dvh, 64px);
     font-size: 1.125rem;
   }
 

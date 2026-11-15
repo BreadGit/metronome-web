@@ -146,7 +146,7 @@
     justify-items: center;
     width: calc(3ch + 0.2em);
     font-family: var(--font-numeric);
-    font-size: clamp(4.5rem, 22vw, 6.5rem);
+    font-size: clamp(3.5rem, min(22vw, 11dvh), 6.5rem);
     font-weight: 300;
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -193,8 +193,8 @@
 
   .slider {
     width: 100%;
-    height: 44px;
-    margin: 0.25rem 0 0;
+    height: clamp(32px, 6dvh, 44px);
+    margin: clamp(0px, 0.5dvh, 0.25rem) 0 0;
     accent-color: var(--accent);
     cursor: pointer;
   }

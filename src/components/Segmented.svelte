@@ -34,7 +34,7 @@
 
   legend {
     padding: 0;
-    margin-bottom: 0.375rem;
+    margin-bottom: clamp(0.25rem, 0.75dvh, 0.375rem);
   }
 
   .segments {
