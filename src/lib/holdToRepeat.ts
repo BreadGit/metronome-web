@@ -13,7 +13,14 @@ export function holdToRepeat(step: () => boolean): Attachment<HTMLButtonElement>
         if (advance()) repeatAfter(REPEAT_INTERVAL_MS);
       }, delay);
     };
-    const stop = () => clearTimeout(timer);
+    let holder: number | null = null;
+    const stop = () => {
+      clearTimeout(timer);
+      holder = null;
+    };
+    const release = (event: PointerEvent) => {
+      if (event.pointerId === holder) stop();
+    };
 
     const controller = new AbortController();
     const listen = { signal: controller.signal };
@@ -22,13 +29,14 @@ export function holdToRepeat(step: () => boolean): Attachment<HTMLButtonElement>
       (event) => {
         if (!event.isPrimary || event.button !== 0) return;
         stop();
+        holder = event.pointerId;
         button.setPointerCapture(event.pointerId);
         if (advance()) repeatAfter(REPEAT_DELAY_MS);
       },
       listen,
     );
-    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
-      button.addEventListener(type, stop, listen);
+    for (const type of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+      button.addEventListener(type, release, listen);
     }
     button.addEventListener(
       "click",

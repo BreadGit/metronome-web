@@ -76,6 +76,15 @@ describe("holdToRepeat", () => {
     expect(steps()).toBe(3);
   });
 
+  it("keeps repeating when another pointer is released", () => {
+    const { steps, press, pointer } = setup();
+    press();
+    pointer("pointerdown", { pointerId: 2, isPrimary: false });
+    pointer("pointerup", { pointerId: 2, isPrimary: false });
+    vi.advanceTimersByTime(REPEAT_DELAY_MS + REPEAT_INTERVAL_MS);
+    expect(steps()).toBe(3);
+  });
+
   it("stops when the window loses focus", () => {
     const { steps, press } = setup();
     press();
